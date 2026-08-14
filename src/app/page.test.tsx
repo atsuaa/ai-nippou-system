@@ -9,4 +9,11 @@ describe("Home", () => {
       screen.getByText(/To get started, edit the/i),
     ).toBeInTheDocument();
   });
+
+  it("renders the documentation link", () => {
+    render(<Home />);
+    expect(
+      screen.getByRole("link", { name: /documentation/i }),
+    ).toBeInTheDocument();
+  });
 });
