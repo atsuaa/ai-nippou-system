@@ -33,6 +33,15 @@ npm run test:watch # Vitest実行(watchモード)
 
 `npm install`時に`prepare`スクリプトが`husky`を実行し、`core.hooksPath`が`.husky/_`に設定される。`.husky/pre-commit`で`npm run lint`→`npm test`をコミット前に実行し、失敗時はコミットを止める。`.husky/_`は自動生成物のため`.gitignore`済み。
 
+## CI/CD(GitHub Actions → Cloud Run)
+
+- **GCPプロジェクト**: `ma-ai-nippou-system` / **リージョン**: `asia-northeast1` / **Cloud Runサービス名・Artifact Registryリポジトリ名**: `ai-nippou-system`
+- **`.github/workflows/ci.yml`**: PRおよびmainへのpushで`lint` → `test` → `build`を実行
+- **`.github/workflows/deploy.yml`**: mainへのpushで、Workload Identity Federation(`google-github-actions/auth`)経由でGCPに認証し、`make release`(Makefile参照)でビルド・push・Cloud Runデプロイまで一括実行する。GitHub側に`vars.WIF_PROVIDER` / `vars.WIF_SERVICE_ACCOUNT`(Repository variables)の設定が必要
+- **デプロイコマンドは全て`Makefile`に集約**している(`make build` / `push` / `deploy` / `release`)。GCP側インフラの初回セットアップ(API有効化・Artifact Registry作成・サービスアカウント作成・WIF設定)も`make setup-*`ターゲットとして用意しており、Makefile内のコメントに手順がある
+- **Dockerfile**: `next.config.ts`の`output: "standalone"`を前提にした3段階ビルド(`deps` → `builder` → `runner`)。Cloud Runは`PORT`環境変数を自動注入するため、Dockerfile側の`ENV PORT=3000`はローカル実行時のフォールバック
+- **`--allow-unauthenticated`で公開している**。アプリ自体の認証方式は`docs/requirements.md`の検討事項として未確定なので、実データを扱う前にCloud Run側のアクセス制御(IAM invoker限定 or アプリ内認証)を見直すこと
+
 ## 採用技術
 
 | 分類 | 技術 | 状態 |
