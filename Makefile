@@ -8,7 +8,7 @@
 #   make setup-apis
 #   make setup-artifact-registry
 #   make setup-service-account
-#   make setup-wif GITHUB_REPO=your-org/ai-nippou-system
+#   make setup-wif            # GITHUB_REPOはatsuaa/ai-nippou-systemがデフォルト。別リポジトリで使う場合はGITHUB_REPO=org/repoで上書き
 # ------------------------------------------------------------------
 
 PROJECT_ID ?= ma-ai-nippou-system
@@ -25,7 +25,7 @@ SA_NAME      ?= github-actions-deployer
 SA_EMAIL     := $(SA_NAME)@$(PROJECT_ID).iam.gserviceaccount.com
 WIF_POOL     ?= github-pool
 WIF_PROVIDER ?= github-provider
-GITHUB_REPO  ?=
+GITHUB_REPO  ?= atsuaa/ai-nippou-system
 
 .PHONY: help auth build push deploy release \
         setup-apis setup-artifact-registry setup-service-account setup-wif
@@ -40,7 +40,7 @@ help:
 	@echo "make setup-apis"
 	@echo "make setup-artifact-registry"
 	@echo "make setup-service-account"
-	@echo "make setup-wif GITHUB_REPO=your-org/ai-nippou-system"
+	@echo "make setup-wif                                     - GITHUB_REPO=$(GITHUB_REPO) (別リポジトリならGITHUB_REPO=org/repoで上書き)"
 
 auth:
 	gcloud auth configure-docker $(REGION)-docker.pkg.dev --quiet --project $(PROJECT_ID)
@@ -94,7 +94,7 @@ setup-service-account:
 
 setup-wif:
 	@if [ -z "$(GITHUB_REPO)" ]; then \
-		echo "GITHUB_REPO を指定してください。例: make setup-wif GITHUB_REPO=your-org/ai-nippou-system" >&2; \
+		echo "GITHUB_REPO を指定してください。例: make setup-wif GITHUB_REPO=org/repo" >&2; \
 		exit 1; \
 	fi
 	gcloud iam workload-identity-pools create $(WIF_POOL) \
