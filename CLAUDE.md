@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## プロジェクトの現状
 
-`create-next-app`でNext.jsプロジェクトを初期化済み(TypeScript / Tailwind CSS / App Router / `src`ディレクトリ構成)。ESLintとVitestは導入済み。UIコンポーネント(shadcn/ui)・OpenAPI/Zod・Prismaはまだ未導入で、`src/app`の内容もテンプレートのまま。
+`create-next-app`でNext.jsプロジェクトを初期化済み(TypeScript / Tailwind CSS / App Router / `src`ディレクトリ構成)。ESLintとVitestは導入済み。Prismaも導入済み(`prisma/schema.prisma`にDBスキーマを定義、ローカル開発はSQLite)。UIコンポーネント(shadcn/ui)・OpenAPI/Zodはまだ未導入で、`src/app`の内容もテンプレートのまま。
 
 ## よく使うコマンド
 
@@ -17,9 +17,23 @@ npm run start      # 本番ビルドの起動
 npm run lint       # ESLint実行
 npm run test       # Vitest実行(1回のみ)
 npm run test:watch # Vitest実行(watchモード)
+npm run db:migrate # マイグレーション作成・ローカルDB(SQLite)へ適用(prisma migrate dev)
+npm run db:generate # Prisma Clientの再生成(prisma generate)
+npm run db:seed    # シードデータ投入(docs/test.md 2章のテスト用マスタデータ)
+npm run db:studio  # Prisma Studio起動(DBの中身をGUIで確認)
 ```
 
 単体のテストファイルのみ実行する場合は `npm run test -- src/app/page.test.tsx` のようにパスを渡す。
+
+## DBスキーマ設定(Prisma)
+
+`prisma/schema.prisma` で `docs/requirements.md` 5章のER図・6章のテーブル定義に対応する5モデル(SalesStaff / Customer / DailyReport / VisitRecord / Comment)を定義している。各モデルのフィールド名はAPI仕様書(`docs/api.md`)に合わせたcamelCase、DBカラム名は`@map`/`@@map`でER図通りのsnake_caseにマッピングしている。
+
+- ローカル開発DBはSQLite(`.env`の`DATABASE_URL="file:./dev.db"`。`.env`は`.gitignore`対象のため、初回は`.env.example`をコピーして使う)
+- Prisma 7系のため、Prisma Client生成には`generator`ブロックの`output`指定と`@prisma/adapter-better-sqlite3`によるドライバアダプタが必須(Rust-freeクライアント)。生成先`src/generated/prisma`は`.gitignore`対象
+- 設定ファイルは`prisma.config.ts`(スキーマ・マイグレーション・シードコマンドの参照先を定義)
+- シードスクリプトは`prisma/seed.ts`。`npx prisma migrate dev`実行時、および`npm run db:seed`で`docs/test.md` 2章のテスト用マスタデータ(STAFF-1〜5, CUST-1〜2, REPORT-1)を投入する
+- 本番DB接続・Cloud Run側の接続設定は未着手(別issueのスコープ)
 
 ## Lint設定
 
@@ -52,7 +66,7 @@ npm run test:watch # Vitest実行(watchモード)
 | スタイリング | Tailwind CSS | 導入済み |
 | UIコンポーネント | shadcn/ui | 未導入 |
 | APIスキーマ定義 | OpenAPI(Zodによる検証) | 未導入 |
-| DBスキーマ定義 | Prisma | 未導入 |
+| DBスキーマ定義 | Prisma(ローカル開発はSQLite) | 導入済み |
 | テスト | Vitest + React Testing Library | 導入済み |
 | デプロイ | Google Cloud Run | 未設定 |
 

@@ -1,0 +1,95 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+//
+// docs/requirements.md 5章(ER図)・6章(テーブル定義)に対応する。
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+/// 営業担当者マスタ。role で営業担当者/上長/管理者を区別し、managerId の自己参照で上長関係を表現する。
+model SalesStaff {
+  staffId   Int      @id @default(autoincrement()) @map("staff_id")
+  name      String
+  email     String   @unique
+  role      String
+  managerId Int?     @map("manager_id")
+  manager   SalesStaff?  @relation("StaffManager", fields: [managerId], references: [staffId])
+  members   SalesStaff[] @relation("StaffManager")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  primaryCustomers Customer[]    @relation("PrimaryStaff")
+  dailyReports     DailyReport[]
+  comments         Comment[]
+
+  @@map("sales_staff")
+}
+
+/// 顧客マスタ。primaryStaffId は任意で、主担当営業を表す。
+model Customer {
+  customerId     Int      @id @default(autoincrement()) @map("customer_id")
+  customerName   String   @map("customer_name")
+  industry       String?
+  address        String?
+  phone          String?
+  primaryStaffId Int?     @map("primary_staff_id")
+  primaryStaff   SalesStaff? @relation("PrimaryStaff", fields: [primaryStaffId], references: [staffId])
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
+
+  visitRecords VisitRecord[]
+
+  @@map("customer")
+}
+
+/// 日報。1担当者1日1件(staffId, reportDate)の暫定仕様(requirements.md 4章参照)。
+model DailyReport {
+  reportId   Int      @id @default(autoincrement()) @map("report_id")
+  staffId    Int      @map("staff_id")
+  staff      SalesStaff @relation(fields: [staffId], references: [staffId])
+  reportDate DateTime @map("report_date")
+  problem    String?
+  plan       String?
+  status     String?
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @updatedAt @map("updated_at")
+
+  visitRecords VisitRecord[]
+  comments     Comment[]
+
+  @@unique([staffId, reportDate])
+  @@map("daily_report")
+}
+
+/// 訪問記録。DailyReport の子テーブルで、独立したCRUD APIは持たない(docs/api.md参照)。
+model VisitRecord {
+  visitId      Int      @id @default(autoincrement()) @map("visit_id")
+  reportId     Int      @map("report_id")
+  report       DailyReport @relation(fields: [reportId], references: [reportId], onDelete: Cascade)
+  customerId   Int      @map("customer_id")
+  customer     Customer @relation(fields: [customerId], references: [customerId])
+  visitTime    String?  @map("visit_time")
+  visitContent String   @map("visit_content")
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  @@map("visit_record")
+}
+
+/// コメント。DailyReport(Problem/Plan含む)への上長等からの返信。
+model Comment {
+  commentId      Int      @id @default(autoincrement()) @map("comment_id")
+  reportId       Int      @map("report_id")
+  report         DailyReport @relation(fields: [reportId], references: [reportId], onDelete: Cascade)
+  staffId        Int      @map("staff_id")
+  staff          SalesStaff @relation(fields: [staffId], references: [staffId])
+  commentContent String   @map("comment_content")
+  createdAt      DateTime @default(now()) @map("created_at")
+
+  @@map("comment")
+}
