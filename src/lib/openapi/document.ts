@@ -14,7 +14,7 @@ import {
   commentMutationRequestSchema,
   commentSchema,
 } from "@/lib/schemas/comment";
-import { paginationQuerySchema, staffRoleSchema } from "@/lib/schemas/common";
+import { staffRoleSchema } from "@/lib/schemas/common";
 import {
   customerListQuerySchema,
   customerMutationRequestSchema,
@@ -98,7 +98,7 @@ const paths: ZodOpenApiPathsObject = {
       tags: ["staff"],
       summary: "営業担当者マスタ一覧(管理者のみ利用可、FR-12)",
       requestParams: {
-        query: staffListQuerySchema.extend(paginationQuerySchema.shape),
+        query: staffListQuerySchema,
       },
       responses: {
         "200": {
@@ -198,7 +198,7 @@ const paths: ZodOpenApiPathsObject = {
       tags: ["customers"],
       summary: "顧客マスタ一覧(FR-11)",
       requestParams: {
-        query: customerListQuerySchema.extend(paginationQuerySchema.shape),
+        query: customerListQuerySchema,
       },
       responses: {
         "200": {

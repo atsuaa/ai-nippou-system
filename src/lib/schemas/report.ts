@@ -10,16 +10,27 @@ import { paginationQuerySchema } from "./common";
  */
 export const visitRecordInputSchema = z
   .object({
-    customerId: z.number().int().positive().meta({
-      description: "訪問した顧客のcustomerId(顧客マスタから選択)",
-    }),
-    visitTime: z.string().min(1).optional().meta({
-      description: "訪問時刻・順序",
-      example: "10:00",
-    }),
-    visitContent: z.string().min(1, "訪問内容は必須です。").meta({
-      description: "訪問内容",
-    }),
+    customerId: z
+      .number("customerId は必須です。")
+      .int("customerId は整数で指定してください。")
+      .positive("customerId は正の整数で指定してください。")
+      .meta({
+        description: "訪問した顧客のcustomerId(顧客マスタから選択)",
+      }),
+    visitTime: z
+      .string("visitTime は1文字以上の文字列で指定してください。")
+      .min(1, "visitTime は1文字以上の文字列で指定してください。")
+      .optional()
+      .meta({
+        description: "訪問時刻・順序",
+        example: "10:00",
+      }),
+    visitContent: z
+      .string("訪問内容は必須です。")
+      .min(1, "訪問内容は必須です。")
+      .meta({
+        description: "訪問内容",
+      }),
   })
   .meta({ id: "VisitRecordInput" });
 
@@ -35,14 +46,20 @@ export const reportMutationRequestSchema = z
       description: "報告日",
       example: "2026-08-14",
     }),
-    problem: z.string().optional().meta({
-      description: "課題・相談(FR-06)",
-    }),
-    plan: z.string().optional().meta({
-      description: "明日やること(FR-07)",
-    }),
+    problem: z
+      .string("課題・相談は文字列で指定してください。")
+      .optional()
+      .meta({
+        description: "課題・相談(FR-06)",
+      }),
+    plan: z
+      .string("明日やることは文字列で指定してください。")
+      .optional()
+      .meta({
+        description: "明日やること(FR-07)",
+      }),
     visits: z
-      .array(visitRecordInputSchema)
+      .array(visitRecordInputSchema, "訪問記録は配列で指定してください。")
       .min(1, "訪問記録は1件以上登録してください。")
       .meta({ description: "訪問記録の配列(FR-02)" }),
   })
@@ -53,11 +70,22 @@ export type ReportMutationRequest = z.infer<typeof reportMutationRequestSchema>;
 /** docs/api.md 5.4 GET /reports クエリパラメータ(ページネーション込み) */
 export const reportListQuerySchema = z
   .object({
-    staffId: z.coerce.number().int().positive().optional().meta({
-      description: "上長・管理者が配下の担当者を指定する場合に使用",
-    }),
-    dateFrom: z.iso.date().optional().meta({ description: "報告日の範囲検索(開始)" }),
-    dateTo: z.iso.date().optional().meta({ description: "報告日の範囲検索(終了)" }),
+    staffId: z.coerce
+      .number("staffId は数値で指定してください。")
+      .int("staffId は整数で指定してください。")
+      .positive("staffId は正の整数で指定してください。")
+      .optional()
+      .meta({
+        description: "上長・管理者が配下の担当者を指定する場合に使用",
+      }),
+    dateFrom: z.iso
+      .date("dateFrom はYYYY-MM-DD形式で指定してください。")
+      .optional()
+      .meta({ description: "報告日の範囲検索(開始)" }),
+    dateTo: z.iso
+      .date("dateTo はYYYY-MM-DD形式で指定してください。")
+      .optional()
+      .meta({ description: "報告日の範囲検索(終了)" }),
   })
   .extend(paginationQuerySchema.shape)
   .meta({ id: "ReportListQuery" });

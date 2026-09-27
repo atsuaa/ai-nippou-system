@@ -9,7 +9,7 @@ export const loginRequestSchema = z
       .email("メールアドレスの形式が不正です。")
       .meta({ description: "メールアドレス", example: "sato@example.com" }),
     password: z
-      .string()
+      .string("パスワードは必須です。")
       .min(1, "パスワードは必須です。")
       .meta({ description: "パスワード" }),
   })

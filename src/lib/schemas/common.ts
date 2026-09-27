@@ -5,7 +5,10 @@ import { z } from "zod";
  * 権限モデル(CLAUDE.md「維持すべきアーキテクチャ判断」)の判定にも用いる値と一致させる。
  */
 export const staffRoleSchema = z
-  .enum(["営業担当者", "上長", "管理者"])
+  .enum(
+    ["営業担当者", "上長", "管理者"],
+    "役割は「営業担当者」「上長」「管理者」のいずれかを指定してください。",
+  )
   .meta({
     id: "StaffRole",
     description: "営業担当者の役割",
@@ -17,16 +20,16 @@ export type StaffRole = z.infer<typeof staffRoleSchema>;
 /** docs/api.md 3.2節の共通ページネーションクエリパラメータ */
 export const paginationQuerySchema = z.object({
   page: z.coerce
-    .number()
-    .int()
-    .min(1)
+    .number("pageは数値で指定してください。")
+    .int("pageは整数で指定してください。")
+    .min(1, "pageは1以上の整数で指定してください。")
     .default(1)
     .meta({ description: "ページ番号", example: 1 }),
   perPage: z.coerce
-    .number()
-    .int()
-    .min(1)
-    .max(100)
+    .number("perPageは数値で指定してください。")
+    .int("perPageは整数で指定してください。")
+    .min(1, "perPageは1以上の整数で指定してください。")
+    .max(100, "perPageは100以下で指定してください。")
     .default(20)
     .meta({ description: "1ページあたりの件数", example: 20 }),
 });

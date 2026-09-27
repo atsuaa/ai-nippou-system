@@ -46,6 +46,17 @@ describe("reportMutationRequestSchema", () => {
     expect(result.success).toBe(false);
   });
 
+  it("returns a Japanese error message when a visit is missing customerId entirely", () => {
+    const result = reportMutationRequestSchema.safeParse({
+      ...valid,
+      visits: [{ visitContent: "内容のみ" }],
+    });
+    expect(result.success).toBe(false);
+    if (!result.success) {
+      expect(result.error.issues[0].message).toBe("customerId は必須です。");
+    }
+  });
+
   it("rejects a visit missing the required visitContent", () => {
     const result = reportMutationRequestSchema.safeParse({
       ...valid,
@@ -80,5 +91,25 @@ describe("reportListQuerySchema", () => {
   it("coerces staffId from a query string to a number", () => {
     const result = reportListQuerySchema.parse({ staffId: "12" });
     expect(result.staffId).toBe(12);
+  });
+
+  it("returns a Japanese error message when staffId is not a number", () => {
+    const result = reportListQuerySchema.safeParse({ staffId: "abc" });
+    expect(result.success).toBe(false);
+    if (!result.success) {
+      expect(result.error.issues[0].message).toBe(
+        "staffId は数値で指定してください。",
+      );
+    }
+  });
+
+  it("returns a Japanese error message when dateFrom is not a valid date", () => {
+    const result = reportListQuerySchema.safeParse({ dateFrom: "2026/08/14" });
+    expect(result.success).toBe(false);
+    if (!result.success) {
+      expect(result.error.issues[0].message).toBe(
+        "dateFrom はYYYY-MM-DD形式で指定してください。",
+      );
+    }
   });
 });

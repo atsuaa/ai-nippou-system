@@ -26,4 +26,14 @@ describe("loginRequestSchema", () => {
     });
     expect(result.success).toBe(false);
   });
+
+  it("returns a Japanese error message when password is missing entirely (not just empty)", () => {
+    const result = loginRequestSchema.safeParse({
+      email: "sato@example.com",
+    });
+    expect(result.success).toBe(false);
+    if (!result.success) {
+      expect(result.error.issues[0].message).toBe("パスワードは必須です。");
+    }
+  });
 });

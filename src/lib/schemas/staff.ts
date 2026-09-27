@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-import { staffRoleSchema } from "./common";
+import { paginationQuerySchema, staffRoleSchema } from "./common";
 
 /**
  * docs/api.md 5.2 POST /staff, PUT /staff/{staffId} リクエストボディ。
@@ -8,7 +8,7 @@ import { staffRoleSchema } from "./common";
  */
 export const staffMutationRequestSchema = z
   .object({
-    name: z.string().min(1, "氏名は必須です。").meta({
+    name: z.string("氏名は必須です。").min(1, "氏名は必須です。").meta({
       description: "氏名",
       example: "佐藤 太郎",
     }),
@@ -17,21 +17,31 @@ export const staffMutationRequestSchema = z
       example: "sato@example.com",
     }),
     role: staffRoleSchema,
-    managerId: z.number().int().positive().optional().meta({
-      description:
-        "上長のstaffId。roleが「上長」の担当者を指定する(検討事項: 権限設計の詳細はrequirements.md 4章参照)",
-    }),
+    managerId: z
+      .number("managerIdは数値で指定してください。")
+      .int("managerIdは整数で指定してください。")
+      .positive("managerIdは正の整数で指定してください。")
+      .optional()
+      .meta({
+        description:
+          "上長のstaffId。roleが「上長」の担当者を指定する(検討事項: 権限設計の詳細はrequirements.md 4章参照)",
+      }),
   })
   .meta({ id: "StaffMutationRequest" });
 
 export type StaffMutationRequest = z.infer<typeof staffMutationRequestSchema>;
 
-/** docs/api.md 5.2 GET /staff クエリパラメータ */
+/** docs/api.md 5.2 GET /staff クエリパラメータ(ページネーション込み) */
 export const staffListQuerySchema = z
   .object({
-    name: z.string().min(1).optional().meta({ description: "氏名の部分一致検索" }),
+    name: z
+      .string("氏名は1文字以上の文字列で指定してください。")
+      .min(1, "氏名は1文字以上の文字列で指定してください。")
+      .optional()
+      .meta({ description: "氏名の部分一致検索" }),
     role: staffRoleSchema.optional(),
   })
+  .extend(paginationQuerySchema.shape)
   .meta({ id: "StaffListQuery" });
 
 export type StaffListQuery = z.infer<typeof staffListQuerySchema>;

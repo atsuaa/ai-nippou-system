@@ -21,4 +21,12 @@ describe("commentMutationRequestSchema", () => {
     const result = commentMutationRequestSchema.safeParse({});
     expect(result.success).toBe(false);
   });
+
+  it("returns a Japanese error message when commentContent is missing entirely (not just empty)", () => {
+    const result = commentMutationRequestSchema.safeParse({});
+    expect(result.success).toBe(false);
+    if (!result.success) {
+      expect(result.error.issues[0].message).toBe("コメント内容は必須です。");
+    }
+  });
 });

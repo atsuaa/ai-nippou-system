@@ -7,10 +7,13 @@ import { z } from "zod";
  */
 export const commentMutationRequestSchema = z
   .object({
-    commentContent: z.string().min(1, "コメント内容は必須です。").meta({
-      description: "コメント内容",
-      example: "値引きは15%まで許容可能。明日相談しよう。",
-    }),
+    commentContent: z
+      .string("コメント内容は必須です。")
+      .min(1, "コメント内容は必須です。")
+      .meta({
+        description: "コメント内容",
+        example: "値引きは15%まで許容可能。明日相談しよう。",
+      }),
   })
   .meta({ id: "CommentMutationRequest" });
 
