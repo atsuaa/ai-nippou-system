@@ -9,6 +9,9 @@ FROM node:24-alpine AS builder
 WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
+# Prisma 7系はRust-freeクライアントで、生成先(src/generated/prisma)は.gitignore対象のため
+# ビルド時に明示的に生成する(prisma/schema.prisma が揃うこの段階で実行する)。
+RUN npm run db:generate
 RUN npm run build
 
 FROM node:24-alpine AS runner
