@@ -1,0 +1,1092 @@
+# このファイルは scripts/generate-openapi.ts により自動生成される。
+# 直接編集せず、src/lib/schemas または src/lib/openapi/document.ts を変更してから
+# `npm run openapi:generate` を再実行すること。
+openapi: 3.1.0
+info:
+  title: 営業日報システム API
+  version: 0.1.0
+  description: docs/api.md
+    に対応するOpenAPI定義(自動生成)。編集する場合はdocs/api.mdとこのファイルの生成元(このファイル)を合わせて更新すること。
+servers:
+  - url: /api/v1
+tags:
+  - name: auth
+    description: 認証
+  - name: staff
+    description: 営業担当者マスタ
+  - name: customers
+    description: 顧客マスタ
+  - name: reports
+    description: 日報(訪問記録を含む)
+  - name: comments
+    description: コメント
+security:
+  - bearerAuth: []
+paths:
+  /auth/login:
+    post:
+      tags:
+        - auth
+      summary: ログイン
+      security: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LoginRequest"
+      responses:
+        "200":
+          description: "200 OK: ログイン成功"
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: "#/components/schemas/LoginResponse"
+                required:
+                  - data
+                additionalProperties: false
+        "401": &a1
+          description: "401 Unauthorized: 未認証(UNAUTHORIZED)"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+  /staff:
+    get:
+      tags:
+        - staff
+      summary: 営業担当者マスタ一覧(管理者のみ利用可、FR-12)
+      parameters:
+        - in: query
+          name: name
+          schema:
+            description: 氏名の部分一致検索
+            type: string
+            minLength: 1
+          description: 氏名の部分一致検索
+        - in: query
+          name: role
+          schema:
+            $ref: "#/components/schemas/StaffRole"
+        - in: query
+          name: page
+          schema:
+            default: 1
+            description: ページ番号
+            example: 1
+            type: integer
+            minimum: 1
+            maximum: 9007199254740991
+          description: ページ番号
+        - in: query
+          name: perPage
+          schema:
+            default: 20
+            description: 1ページあたりの件数
+            example: 20
+            type: integer
+            minimum: 1
+            maximum: 100
+          description: 1ページあたりの件数
+      responses:
+        "200":
+          description: 200 OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/Staff"
+                  meta:
+                    $ref: "#/components/schemas/PaginationMeta"
+                required:
+                  - data
+                  - meta
+                additionalProperties: false
+        "401": *a1
+        "403": &a2
+          description: "403 Forbidden: アクセス範囲外のリソースへの操作(FORBIDDEN)"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+    post:
+      tags:
+        - staff
+      summary: 営業担当者マスタ登録(管理者のみ利用可、FR-12)
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/StaffMutationRequest"
+      responses:
+        "201":
+          description: 201 Created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: "#/components/schemas/Staff"
+                required:
+                  - data
+                additionalProperties: false
+        "400": &a3
+          description: "400 Bad Request: リクエスト不正・バリデーションエラー(VALIDATION_ERROR)"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+        "401": *a1
+        "403": *a2
+        "409": &a5
+          description: "409 Conflict: 一意制約違反(DUPLICATE_REPORT / DUPLICATE_EMAIL)"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+  /staff/{staffId}:
+    get:
+      tags:
+        - staff
+      summary: 営業担当者マスタ詳細
+      parameters:
+        - in: path
+          name: staffId
+          schema:
+            type: integer
+            exclusiveMinimum: 0
+            maximum: 9007199254740991
+            description: 営業担当者ID
+          required: true
+          description: 営業担当者ID
+      responses:
+        "200":
+          description: 200 OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: "#/components/schemas/Staff"
+                required:
+                  - data
+                additionalProperties: false
+        "401": *a1
+        "404": &a4
+          description: "404 Not Found: 指定したリソースが存在しない(NOT_FOUND)"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+    put:
+      tags:
+        - staff
+      summary: 営業担当者マスタ更新(FR-12, FR-14)
+      parameters:
+        - in: path
+          name: staffId
+          schema:
+            type: integer
+            exclusiveMinimum: 0
+            maximum: 9007199254740991
+            description: 営業担当者ID
+          required: true
+          description: 営業担当者ID
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/StaffMutationRequest"
+      responses:
+        "200":
+          description: 200 OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: "#/components/schemas/Staff"
+                required:
+                  - data
+                additionalProperties: false
+        "400": *a3
+        "401": *a1
+        "403": *a2
+        "404": *a4
+        "409": *a5
+    delete:
+      tags:
+        - staff
+      summary: 営業担当者マスタ削除
+      parameters:
+        - in: path
+          name: staffId
+          schema:
+            type: integer
+            exclusiveMinimum: 0
+            maximum: 9007199254740991
+            description: 営業担当者ID
+          required: true
+          description: 営業担当者ID
+      responses:
+        "204":
+          description: 204 No Content
+        "401": *a1
+        "403": *a2
+        "404": *a4
+        "409": *a5
+  /customers:
+    get:
+      tags:
+        - customers
+      summary: 顧客マスタ一覧(FR-11)
+      parameters:
+        - in: query
+          name: name
+          schema:
+            description: 顧客名の部分一致検索
+            type: string
+            minLength: 1
+          description: 顧客名の部分一致検索
+        - in: query
+          name: page
+          schema:
+            default: 1
+            description: ページ番号
+            example: 1
+            type: integer
+            minimum: 1
+            maximum: 9007199254740991
+          description: ページ番号
+        - in: query
+          name: perPage
+          schema:
+            default: 20
+            description: 1ページあたりの件数
+            example: 20
+            type: integer
+            minimum: 1
+            maximum: 100
+          description: 1ページあたりの件数
+      responses:
+        "200":
+          description: 200 OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/Customer"
+                  meta:
+                    $ref: "#/components/schemas/PaginationMeta"
+                required:
+                  - data
+                  - meta
+                additionalProperties: false
+        "401": *a1
+    post:
+      tags:
+        - customers
+      summary: 顧客マスタ登録(管理者のみ利用可、FR-11)
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CustomerMutationRequest"
+      responses:
+        "201":
+          description: 201 Created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: "#/components/schemas/Customer"
+                required:
+                  - data
+                additionalProperties: false
+        "400": *a3
+        "401": *a1
+        "403": *a2
+  /customers/{customerId}:
+    get:
+      tags:
+        - customers
+      summary: 顧客マスタ詳細
+      parameters:
+        - in: path
+          name: customerId
+          schema:
+            type: integer
+            exclusiveMinimum: 0
+            maximum: 9007199254740991
+            description: 顧客ID
+          required: true
+          description: 顧客ID
+      responses:
+        "200":
+          description: 200 OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: "#/components/schemas/Customer"
+                required:
+                  - data
+                additionalProperties: false
+        "401": *a1
+        "404": *a4
+    put:
+      tags:
+        - customers
+      summary: 顧客マスタ更新(FR-11, FR-13)
+      parameters:
+        - in: path
+          name: customerId
+          schema:
+            type: integer
+            exclusiveMinimum: 0
+            maximum: 9007199254740991
+            description: 顧客ID
+          required: true
+          description: 顧客ID
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CustomerMutationRequest"
+      responses:
+        "200":
+          description: 200 OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: "#/components/schemas/Customer"
+                required:
+                  - data
+                additionalProperties: false
+        "400": *a3
+        "401": *a1
+        "403": *a2
+        "404": *a4
+    delete:
+      tags:
+        - customers
+      summary: 顧客マスタ削除
+      parameters:
+        - in: path
+          name: customerId
+          schema:
+            type: integer
+            exclusiveMinimum: 0
+            maximum: 9007199254740991
+            description: 顧客ID
+          required: true
+          description: 顧客ID
+      responses:
+        "204":
+          description: 204 No Content
+        "401": *a1
+        "403": *a2
+        "404": *a4
+        "409": *a5
+  /reports:
+    get:
+      tags:
+        - reports
+      summary: 日報一覧(FR-04, FR-05)
+      parameters:
+        - in: query
+          name: staffId
+          schema:
+            description: 上長・管理者が配下の担当者を指定する場合に使用
+            type: integer
+            exclusiveMinimum: 0
+            maximum: 9007199254740991
+          description: 上長・管理者が配下の担当者を指定する場合に使用
+        - in: query
+          name: dateFrom
+          schema:
+            description: 報告日の範囲検索(開始)
+            type: string
+            format: date
+            pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))$
+          description: 報告日の範囲検索(開始)
+        - in: query
+          name: dateTo
+          schema:
+            description: 報告日の範囲検索(終了)
+            type: string
+            format: date
+            pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))$
+          description: 報告日の範囲検索(終了)
+        - in: query
+          name: page
+          schema:
+            default: 1
+            description: ページ番号
+            example: 1
+            type: integer
+            minimum: 1
+            maximum: 9007199254740991
+          description: ページ番号
+        - in: query
+          name: perPage
+          schema:
+            default: 20
+            description: 1ページあたりの件数
+            example: 20
+            type: integer
+            minimum: 1
+            maximum: 100
+          description: 1ページあたりの件数
+      responses:
+        "200":
+          description: 200 OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/ReportListItem"
+                  meta:
+                    $ref: "#/components/schemas/PaginationMeta"
+                required:
+                  - data
+                  - meta
+                additionalProperties: false
+        "401": *a1
+    post:
+      tags:
+        - reports
+      summary: 日報新規作成(訪問記録を含む。FR-01, FR-02, FR-03, FR-06, FR-07)
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ReportMutationRequest"
+      responses:
+        "201":
+          description: 201 Created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: "#/components/schemas/ReportDetail"
+                required:
+                  - data
+                additionalProperties: false
+        "400": *a3
+        "401": *a1
+        "409": *a5
+  /reports/{reportId}:
+    get:
+      tags:
+        - reports
+      summary: 日報詳細(訪問記録・コメント含む。FR-04, FR-05)
+      parameters:
+        - in: path
+          name: reportId
+          schema:
+            type: integer
+            exclusiveMinimum: 0
+            maximum: 9007199254740991
+            description: 日報ID
+          required: true
+          description: 日報ID
+      responses:
+        "200":
+          description: 200 OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: "#/components/schemas/ReportDetail"
+                required:
+                  - data
+                additionalProperties: false
+        "401": *a1
+        "403": *a2
+        "404": *a4
+    put:
+      tags:
+        - reports
+      summary: 日報更新(作成者本人のみ。FR-01, FR-02, FR-03, FR-06, FR-07)
+      parameters:
+        - in: path
+          name: reportId
+          schema:
+            type: integer
+            exclusiveMinimum: 0
+            maximum: 9007199254740991
+            description: 日報ID
+          required: true
+          description: 日報ID
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ReportMutationRequest"
+      responses:
+        "200":
+          description: 200 OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: "#/components/schemas/ReportDetail"
+                required:
+                  - data
+                additionalProperties: false
+        "400": *a3
+        "401": *a1
+        "403": *a2
+        "404": *a4
+    delete:
+      tags:
+        - reports
+      summary: 日報削除(作成者本人のみ)
+      parameters:
+        - in: path
+          name: reportId
+          schema:
+            type: integer
+            exclusiveMinimum: 0
+            maximum: 9007199254740991
+            description: 日報ID
+          required: true
+          description: 日報ID
+      responses:
+        "204":
+          description: 204 No Content
+        "401": *a1
+        "403": *a2
+        "404": *a4
+  /reports/{reportId}/comments:
+    get:
+      tags:
+        - comments
+      summary: コメント一覧(FR-09, FR-10)
+      parameters:
+        - in: path
+          name: reportId
+          schema:
+            type: integer
+            exclusiveMinimum: 0
+            maximum: 9007199254740991
+            description: 日報ID
+          required: true
+          description: 日報ID
+      responses:
+        "200":
+          description: 200 OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/Comment"
+                required:
+                  - data
+                additionalProperties: false
+        "401": *a1
+        "403": *a2
+        "404": *a4
+    post:
+      tags:
+        - comments
+      summary: コメント投稿(FR-08, FR-09, FR-10)
+      parameters:
+        - in: path
+          name: reportId
+          schema:
+            type: integer
+            exclusiveMinimum: 0
+            maximum: 9007199254740991
+            description: 日報ID
+          required: true
+          description: 日報ID
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CommentMutationRequest"
+      responses:
+        "201":
+          description: 201 Created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: "#/components/schemas/Comment"
+                required:
+                  - data
+                additionalProperties: false
+        "400": *a3
+        "401": *a1
+        "403": *a2
+        "404": *a4
+components:
+  schemas:
+    LoginRequest:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+          pattern: ^(?:[A-Za-z0-9_'+\-]+\.)*[A-Za-z0-9_'+\-]*[A-Za-z0-9_+-]@(?:[A-Za-z0-9][A-Za-z0-9\-]*\.)+[A-Za-z]{2,}$
+          description: メールアドレス
+          example: sato@example.com
+        password:
+          type: string
+          minLength: 1
+          description: パスワード
+      required:
+        - email
+        - password
+    StaffMutationRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+          description: 氏名
+          example: 佐藤 太郎
+        email:
+          type: string
+          format: email
+          pattern: ^(?:[A-Za-z0-9_'+\-]+\.)*[A-Za-z0-9_'+\-]*[A-Za-z0-9_+-]@(?:[A-Za-z0-9][A-Za-z0-9\-]*\.)+[A-Za-z]{2,}$
+          description: メールアドレス(一意)
+          example: sato@example.com
+        role:
+          $ref: "#/components/schemas/StaffRole"
+        managerId:
+          description: "上長のstaffId。roleが「上長」の担当者を指定する(検討事項: 権限設計の詳細はrequirements.md 4章参照)"
+          type: integer
+          exclusiveMinimum: 0
+          maximum: 9007199254740991
+      required:
+        - name
+        - email
+        - role
+    CustomerMutationRequest:
+      type: object
+      properties:
+        customerName:
+          type: string
+          minLength: 1
+          description: 顧客名
+          example: 株式会社サンプル
+        industry:
+          description: 業種
+          type: string
+        address:
+          description: 住所
+          type: string
+        phone:
+          description: 電話番号
+          type: string
+        primaryStaffId:
+          description: 主担当営業のstaffId
+          type: integer
+          exclusiveMinimum: 0
+          maximum: 9007199254740991
+      required:
+        - customerName
+    ReportMutationRequest:
+      type: object
+      properties:
+        reportDate:
+          type: string
+          format: date
+          pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))$
+          description: 報告日
+          example: 2026-08-14
+        problem:
+          description: 課題・相談(FR-06)
+          type: string
+        plan:
+          description: 明日やること(FR-07)
+          type: string
+        visits:
+          minItems: 1
+          type: array
+          items:
+            $ref: "#/components/schemas/VisitRecordInput"
+          description: 訪問記録の配列(FR-02)
+      required:
+        - reportDate
+        - visits
+    VisitRecordInput:
+      type: object
+      properties:
+        customerId:
+          type: integer
+          exclusiveMinimum: 0
+          maximum: 9007199254740991
+          description: 訪問した顧客のcustomerId(顧客マスタから選択)
+        visitTime:
+          description: 訪問時刻・順序
+          example: 10:00
+          type: string
+          minLength: 1
+        visitContent:
+          type: string
+          minLength: 1
+          description: 訪問内容
+      required:
+        - customerId
+        - visitContent
+    CommentMutationRequest:
+      type: object
+      properties:
+        commentContent:
+          type: string
+          minLength: 1
+          description: コメント内容
+          example: 値引きは15%まで許容可能。明日相談しよう。
+      required:
+        - commentContent
+    StaffRole:
+      type: string
+      enum:
+        - 営業担当者
+        - 上長
+        - 管理者
+      description: 営業担当者の役割
+      example: 営業担当者
+    LoginResponse:
+      type: object
+      properties:
+        accessToken:
+          type: string
+          description: アクセストークン(JWT想定)
+        staff:
+          type: object
+          properties:
+            staffId:
+              type: integer
+              minimum: -9007199254740991
+              maximum: 9007199254740991
+            name:
+              type: string
+            role:
+              $ref: "#/components/schemas/StaffRole"
+          required:
+            - staffId
+            - name
+            - role
+          additionalProperties: false
+      required:
+        - accessToken
+        - staff
+      additionalProperties: false
+    ApiErrorResponse:
+      type: object
+      properties:
+        error:
+          type: object
+          properties:
+            code:
+              $ref: "#/components/schemas/ApiErrorCode"
+            message:
+              type: string
+              description: エラーメッセージ
+            details:
+              description: バリデーションエラー等の詳細
+              type: array
+              items:
+                $ref: "#/components/schemas/ApiErrorDetail"
+          required:
+            - code
+            - message
+          additionalProperties: false
+      required:
+        - error
+      additionalProperties: false
+    ApiErrorCode:
+      type: string
+      enum:
+        - UNAUTHORIZED
+        - FORBIDDEN
+        - NOT_FOUND
+        - VALIDATION_ERROR
+        - DUPLICATE_REPORT
+        - DUPLICATE_EMAIL
+        - INTERNAL_ERROR
+      description: APIエラーコード(docs/api.md 6章)
+    ApiErrorDetail:
+      type: object
+      properties:
+        field:
+          type: string
+          description: エラーが発生したフィールド名
+        message:
+          type: string
+          description: フィールドごとのエラー内容
+      required:
+        - field
+        - message
+      additionalProperties: false
+    Staff:
+      type: object
+      properties:
+        staffId:
+          type: integer
+          minimum: -9007199254740991
+          maximum: 9007199254740991
+        name:
+          type: string
+        email:
+          type: string
+          format: email
+          pattern: ^(?:[A-Za-z0-9_'+\-]+\.)*[A-Za-z0-9_'+\-]*[A-Za-z0-9_+-]@(?:[A-Za-z0-9][A-Za-z0-9\-]*\.)+[A-Za-z]{2,}$
+        role:
+          $ref: "#/components/schemas/StaffRole"
+        managerId:
+          anyOf:
+            - type: integer
+              minimum: -9007199254740991
+              maximum: 9007199254740991
+            - type: "null"
+        managerName:
+          type:
+            - string
+            - "null"
+      required:
+        - staffId
+        - name
+        - email
+        - role
+      additionalProperties: false
+    PaginationMeta:
+      type: object
+      properties:
+        page:
+          type: integer
+          minimum: -9007199254740991
+          maximum: 9007199254740991
+          description: ページ番号
+        perPage:
+          type: integer
+          minimum: -9007199254740991
+          maximum: 9007199254740991
+          description: 1ページあたりの件数
+        totalCount:
+          type: integer
+          minimum: -9007199254740991
+          maximum: 9007199254740991
+          description: 総件数
+      required:
+        - page
+        - perPage
+        - totalCount
+      additionalProperties: false
+    Customer:
+      type: object
+      properties:
+        customerId:
+          type: integer
+          minimum: -9007199254740991
+          maximum: 9007199254740991
+        customerName:
+          type: string
+        industry:
+          type:
+            - string
+            - "null"
+        address:
+          type:
+            - string
+            - "null"
+        phone:
+          type:
+            - string
+            - "null"
+        primaryStaffId:
+          anyOf:
+            - type: integer
+              minimum: -9007199254740991
+              maximum: 9007199254740991
+            - type: "null"
+        primaryStaffName:
+          type:
+            - string
+            - "null"
+      required:
+        - customerId
+        - customerName
+      additionalProperties: false
+    ReportListItem:
+      type: object
+      properties:
+        reportId:
+          type: integer
+          minimum: -9007199254740991
+          maximum: 9007199254740991
+        staffId:
+          type: integer
+          minimum: -9007199254740991
+          maximum: 9007199254740991
+        staffName:
+          type: string
+        reportDate:
+          type: string
+          format: date
+          pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))$
+        visitCount:
+          type: integer
+          minimum: -9007199254740991
+          maximum: 9007199254740991
+        commentCount:
+          type: integer
+          minimum: -9007199254740991
+          maximum: 9007199254740991
+      required:
+        - reportId
+        - staffId
+        - staffName
+        - reportDate
+        - visitCount
+        - commentCount
+      additionalProperties: false
+    ReportDetail:
+      type: object
+      properties:
+        reportId:
+          type: integer
+          minimum: -9007199254740991
+          maximum: 9007199254740991
+        staffId:
+          type: integer
+          minimum: -9007199254740991
+          maximum: 9007199254740991
+        staffName:
+          type: string
+        reportDate:
+          type: string
+          format: date
+          pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))$
+        problem:
+          type:
+            - string
+            - "null"
+        plan:
+          type:
+            - string
+            - "null"
+        visits:
+          type: array
+          items:
+            $ref: "#/components/schemas/VisitRecord"
+        comments:
+          type: array
+          items:
+            $ref: "#/components/schemas/Comment"
+        createdAt:
+          type: string
+          format: date-time
+          pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:\.\d+)?(?:Z|([+-](?:[01]\d|2[0-3]):[0-5]\d)))$
+        updatedAt:
+          type: string
+          format: date-time
+          pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:\.\d+)?(?:Z|([+-](?:[01]\d|2[0-3]):[0-5]\d)))$
+      required:
+        - reportId
+        - staffId
+        - staffName
+        - reportDate
+        - visits
+        - comments
+        - createdAt
+        - updatedAt
+      additionalProperties: false
+    VisitRecord:
+      type: object
+      properties:
+        visitId:
+          type: integer
+          minimum: -9007199254740991
+          maximum: 9007199254740991
+        customerId:
+          type: integer
+          minimum: -9007199254740991
+          maximum: 9007199254740991
+        customerName:
+          type: string
+        visitTime:
+          type:
+            - string
+            - "null"
+        visitContent:
+          type: string
+      required:
+        - visitId
+        - customerId
+        - customerName
+        - visitContent
+      additionalProperties: false
+    Comment:
+      type: object
+      properties:
+        commentId:
+          type: integer
+          minimum: -9007199254740991
+          maximum: 9007199254740991
+        staffId:
+          type: integer
+          minimum: -9007199254740991
+          maximum: 9007199254740991
+        staffName:
+          type: string
+        commentContent:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+          pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:\.\d+)?(?:Z|([+-](?:[01]\d|2[0-3]):[0-5]\d)))$
+      required:
+        - commentId
+        - staffId
+        - staffName
+        - commentContent
+        - createdAt
+      additionalProperties: false
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: docs/api.md 2章参照。認証方式(パスワード認証/SSO)は要件定義書4章の検討事項として未確定。
